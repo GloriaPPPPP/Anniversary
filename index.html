@@ -23,7 +23,9 @@
 
     @font-face {
       font-family: "ButterShisan";
-      src: url("assets/fonts/butter-shisan.ttf") format("truetype");
+      src:
+        url("assets/fonts/butter-shisan-subset.woff2") format("woff2"),
+        url("assets/fonts/butter-shisan.ttf") format("truetype");
       font-display: swap;
     }
 
@@ -1534,6 +1536,17 @@
       return encodeURI('assets/photos/' + trip.folder + '/' + file);
     }
 
+    function photoImg(trip, file, photoIndex) {
+      return '<img class="photo-img" data-src="' + photoPath(trip, file) + '" alt="' + trip.place + ' ' + trip.time + ' 照片 ' + (photoIndex + 1) + '" loading="lazy" decoding="async">';
+    }
+
+    function loadPhotos(container) {
+      container.querySelectorAll('img.photo-img[data-src]').forEach((img) => {
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+      });
+    }
+
     function renderTitleFill(row, col, span) {
       const cell = document.createElement('div');
       cell.className = 'cell title-fill';
@@ -1569,7 +1582,7 @@
         const horizontal = opensLeft ? 'right:' + sideOffset + '; --panel-left:auto; --panel-right:' + sideOffset + ';' : 'left:' + sideOffset + '; --panel-left:' + sideOffset + '; --panel-right:auto;';
         const vertical = '--panel-top:calc(' + y + ' * var(--cell-h));';
         return '<figure class="' + foldClass + '" style="--i:' + photoIndex + '; ' + horizontal + vertical + '">' +
-          '<img class="photo-img" src="' + photoPath(trip, file) + '" alt="' + trip.place + ' ' + trip.time + ' 照片 ' + (photoIndex + 1) + '" loading="lazy"><img class="paper-frame" src="assets/stickers/paper.png" alt="" aria-hidden="true">' +
+          photoImg(trip, file, photoIndex) + '<img class="paper-frame" src="assets/stickers/paper.png" alt="" aria-hidden="true">' +
         '</figure>';
       }).join('');
 
@@ -1592,6 +1605,7 @@
         if (wasOpen) {
           closeFoldCell(button, 'memory-cell');
         } else {
+          loadPhotos(button);
           button.classList.remove('closing');
           button.classList.add('open');
         }
@@ -1652,7 +1666,7 @@
         const step = mobileFoldStep(photoIndex, opensLeft);
         const left = 'calc((' + step.x + ') * (var(--mobile-cell-size) + var(--mobile-gap)))';
         const top = 'calc((' + step.y + ') * (var(--mobile-cell-size) + var(--mobile-gap)))';
-        return '<figure class="mobile-photo" style="--i:' + photoIndex + '; --mobile-left:' + left + '; --mobile-top:' + top + '; --mobile-origin:' + step.origin + '; --mobile-start-transform:' + step.transform + ';"><img class="photo-img" src="' + photoPath(trip, file) + '" alt="' + trip.place + ' ' + trip.time + ' 照片 ' + (photoIndex + 1) + '" loading="lazy"><img class="paper-frame" src="assets/stickers/paper.png" alt="" aria-hidden="true"></figure>';
+        return '<figure class="mobile-photo" style="--i:' + photoIndex + '; --mobile-left:' + left + '; --mobile-top:' + top + '; --mobile-origin:' + step.origin + '; --mobile-start-transform:' + step.transform + ';">' + photoImg(trip, file, photoIndex) + '<img class="paper-frame" src="assets/stickers/paper.png" alt="" aria-hidden="true"></figure>';
       }).join("");
       card.innerHTML =
         '<div class="opened-note">' + openCaptions[index] + '</div>' +
@@ -1674,6 +1688,7 @@
         if (wasOpen) {
           closeFoldCell(card, "mobile-card");
         } else {
+          loadPhotos(card);
           card.classList.remove("closing");
           card.classList.add("open");
         }
