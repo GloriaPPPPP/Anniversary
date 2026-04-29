@@ -1,0 +1,1779 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>我们的这一年</title>
+  <style>
+    :root {
+      --paper: #fffbe7;
+      --paper-title: #fbf6e0;
+      --ink: #000;
+      --soft-ink: rgba(47, 14, 14, 0.8);
+      --red: #cb1515;
+      --line: rgba(0, 0, 0, 0.05);
+      --cell-w: 224px;
+      --cell-h: 168px;
+      --canvas-w: 1440px;
+      --canvas-h: 900px;
+      --stage-w: 1344px;
+      --stage-h: 840px;
+      --stage-scale: min(calc(100vw / 1440), calc(100vh / 900), 1);
+    }
+
+    @font-face {
+      font-family: "ButterShisan";
+      src: url("assets/fonts/黄油拾叁体.ttf") format("truetype");
+      font-display: swap;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "ButterShisan", "Kaiti SC", "STKaiti", cursive, sans-serif;
+      overflow: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    button { font: inherit; color: inherit; }
+
+    .page {
+      height: 100vh;
+      width: 100%;
+      min-width: 0;
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 0;
+      background: var(--paper);
+      overflow: hidden;
+    }
+
+    .stage-shell {
+      position: relative;
+      flex: none;
+      width: calc(var(--canvas-w) * var(--stage-scale));
+      height: calc(var(--canvas-h) * var(--stage-scale));
+    }
+
+    .stage-canvas {
+      position: relative;
+      width: var(--canvas-w);
+      height: var(--canvas-h);
+      transform: scale(var(--stage-scale));
+      transform-origin: top left;
+    }
+
+    .stage {
+      position: absolute;
+      left: 48px;
+      top: 30px;
+      width: var(--stage-w);
+      height: var(--stage-h);
+      isolation: isolate;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      left: -48px;
+      top: -30px;
+      width: 1440px;
+      height: 900px;
+      background: url("assets/stickers/background.png") center / 100% 100% no-repeat;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .memory-grid {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1344px;
+      height: 840px;
+      display: grid;
+      grid-template-columns: repeat(6, var(--cell-w));
+      grid-template-rows: repeat(5, var(--cell-h));
+      border: 0.933px solid var(--line);
+      background: var(--paper) url("assets/stickers/background.png") -48px -30px / 1440px 900px no-repeat;
+      gap: 0;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .cell {
+      width: var(--cell-w);
+      height: var(--cell-h);
+      min-width: 0;
+      min-height: 0;
+      background: transparent;
+      border: 0.933px solid var(--line);
+      position: relative;
+      overflow: visible;
+    }
+
+    .title-fill {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    .desktop-paint {
+      position: absolute;
+      left: 507px;
+      top: 169px;
+      width: 445px;
+      height: 335px;
+      z-index: 18;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .desktop-paint img {
+      width: 335px;
+      height: 445px;
+      object-fit: cover;
+      opacity: 0.8;
+      transform: rotate(-90deg);
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .title-lockup {
+      position: absolute;
+      left: 429px;
+      top: 282px;
+      width: 370px;
+      height: 156px;
+      z-index: 20;
+      pointer-events: none;
+      color: var(--ink);
+      text-transform: capitalize;
+    }
+
+    .title-happy,
+    .title-anniversary,
+    .title-sign,
+    .title-ordinal,
+    .title-suffix {
+      position: absolute;
+      z-index: 2;
+      margin: 0;
+      font-weight: 400;
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+
+    .title-tape {
+      position: absolute;
+      z-index: 1;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .title-tape-top {
+      left: -99px;
+      top: -40px;
+      width: 472.5px;
+      height: 141.75px;
+      transform: rotate(6.7deg);
+    }
+
+    .title-tape-bottom {
+      left: -34px;
+      top: 78px;
+      width: 450.9px;
+      height: 135.27px;
+      transform: rotate(5.19deg);
+    }
+
+    .title-happy {
+      left: 0;
+      top: -15.54px;
+      font-size: 108.11px;
+      line-height: 94.013px;
+      clip-path: inset(-28px 100% -28px -28px);
+      animation: writeHappy 900ms steps(6, end) 260ms forwards;
+    }
+
+    .title-anniversary {
+      left: 0;
+      top: 131.35px;
+      font-size: 108.11px;
+      line-height: 40.907px;
+      clip-path: inset(-38px 100% -46px -28px);
+      animation: writeAnniversary 1300ms steps(11, end) 1820ms forwards;
+    }
+
+    .title-sign {
+      left: 42px;
+      top: -65px;
+      font-size: 30.833px;
+      line-height: 17.531px;
+    }
+
+
+    .title-ordinal {
+      left: 185px;
+      top: -96px;
+      color: var(--red);
+      font-size: 333.128px;
+      line-height: 333.128px;
+      transform: rotate(-10.67deg);
+      opacity: 0;
+      animation: popTwo 520ms cubic-bezier(.2,1.3,.3,1) 1180ms forwards;
+    }
+
+    .title-suffix {
+      left: 318px;
+      top: -26px;
+      color: var(--red);
+      font-size: 72.872px;
+      line-height: 72.872px;
+      text-transform: lowercase;
+      opacity: 0;
+      animation: fadeIn 280ms ease 1400ms forwards;
+    }
+
+    .heart-img {
+      position: absolute;
+      left: 115px;
+      top: 103px;
+      width: 24.6px;
+      height: 24.6px;
+      object-fit: contain;
+      z-index: 3;
+      transform: scaleX(-1);
+      opacity: 0;
+      animation: heartBeatDesktop 900ms ease-in-out 3240ms infinite;
+    }
+
+    .title-sun {
+      position: absolute;
+      left: 182px;
+      top: -70px;
+      width: 28px;
+      height: 28px;
+      z-index: 3;
+      object-fit: contain;
+      animation: sunSpin 7s linear infinite;
+      transform-origin: center center;
+    }
+
+    @keyframes writeHappy { to { clip-path: inset(-28px -64px -28px -28px); } }
+    @keyframes writeAnniversary { to { clip-path: inset(-38px -80px -46px -28px); } }
+    @keyframes popTwo { from { opacity: 0; transform: rotate(-10.67deg) scale(.72); } to { opacity: 1; transform: rotate(-10.67deg) scale(1); } }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes heartBeatDesktop {
+      0%, 100% { opacity: 1; transform: scaleX(-1) scale(1); }
+      45% { opacity: 1; transform: scaleX(-1) scale(1.2); }
+    }
+    @keyframes heartBeatMobile {
+      0%, 100% { opacity: 1; transform: scaleX(-1) scale(1); }
+      45% { opacity: 1; transform: scaleX(-1) scale(1.2); }
+    }
+    @keyframes sunSpin {
+      0% { transform: rotate(0deg) translate(0, 0); }
+      25% { transform: rotate(90deg) translate(0.7px, -0.4px); }
+      50% { transform: rotate(180deg) translate(-0.5px, 0.6px); }
+      75% { transform: rotate(270deg) translate(0.4px, 0.5px); }
+      100% { transform: rotate(360deg) translate(0, 0); }
+    }
+
+    .memory-cell {
+      padding: 0;
+      cursor: pointer;
+      perspective: 1400px;
+      perspective-origin: center center;
+      transform-style: preserve-3d;
+      text-align: left;
+      background: transparent;
+      border: 0.933px solid var(--line);
+      z-index: 2;
+    }
+
+    .memory-cell.open { z-index: 60; }
+
+    .memory-cell:focus-visible {
+      outline: 1.5px solid var(--red);
+      outline-offset: -4px;
+    }
+
+    .cover {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background: transparent;
+      transform-origin: bottom center;
+      transition: transform 300ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .memory-cell.open .cover {
+      transform: rotateX(-179deg);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .memory-cell.open-up .cover {
+      transform-origin: top center;
+    }
+
+    .memory-cell.open-up.open .cover {
+      transform: rotateX(179deg);
+    }
+
+    .place-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 84px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: var(--soft-ink);
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .place {
+      display: block;
+      width: 100%;
+      color: var(--soft-ink);
+      font-size: 40px;
+      line-height: 40px;
+      letter-spacing: 0;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .tagline {
+      display: block;
+      width: 100%;
+      color: var(--soft-ink);
+      font-size: 16px;
+      line-height: 16px;
+      letter-spacing: 0;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .time {
+      position: absolute;
+      left: 7.07px;
+      top: 7.07px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--red);
+      font-size: 24px;
+      line-height: 24px;
+      transform: none;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .opened-note {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      color: var(--soft-ink);
+      font-size: 16px;
+      line-height: 16px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 220ms ease 260ms;
+      pointer-events: none;
+    }
+
+    .memory-cell.open .opened-note,
+    .mobile-card.open .opened-note {
+      opacity: 1;
+    }
+
+    .unfold-strip {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      height: calc(var(--stack-count) * 100%);
+      width: calc(var(--row-count) * 100%);
+      display: block;
+      transform-style: preserve-3d;
+      perspective: 1200px;
+      pointer-events: none;
+      z-index: 1;
+      visibility: hidden;
+      opacity: 0;
+      transform-origin: left center;
+      transform: translateZ(0);
+      transition: opacity 120ms ease, visibility 0s linear 640ms;
+    }
+
+    .memory-cell.open .unfold-strip,
+    .memory-cell.closing .unfold-strip {
+      visibility: visible;
+      opacity: 1;
+      transition-delay: 0s;
+    }
+
+    .memory-cell.open-up .unfold-strip {
+      top: auto;
+      bottom: 100%;
+    }
+
+    .memory-cell.open-left .unfold-strip {
+      left: auto;
+      right: 0;
+      transform-origin: right center;
+    }
+
+    .fold-panel {
+      position: absolute;
+      left: var(--panel-left);
+      right: var(--panel-right);
+      top: var(--panel-top);
+      width: var(--cell-w);
+      height: var(--cell-h);
+      margin: 0;
+      background: var(--paper);
+      border: 0.933px solid var(--line);
+      transition: transform 300ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease, box-shadow 320ms ease;
+      transition-delay: calc(225ms + var(--i) * 225ms);
+      overflow: hidden;
+      pointer-events: auto;
+      opacity: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .fold-first {
+      transform: rotateX(92deg);
+      transform-origin: top center;
+    }
+
+    .memory-cell.open-up .fold-first {
+      transform: rotateX(-92deg);
+      transform-origin: bottom center;
+    }
+
+    .fold-side {
+      transform: rotateY(-92deg);
+      transform-origin: left center;
+    }
+
+    .memory-cell.open-left .fold-side {
+      transform: rotateY(92deg);
+      transform-origin: right center;
+    }
+
+    .memory-cell.open .fold-panel {
+      transform: rotateX(0deg) rotateY(0deg);
+      opacity: 1;
+      box-shadow: 4px 0 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .memory-cell.closing .fold-panel {
+      transition-delay: calc((var(--count) - 1 - var(--i)) * 225ms);
+    }
+
+    .memory-cell.closing .cover {
+      transition-delay: calc(var(--count) * 225ms);
+    }
+
+    .fold-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 10px #fff;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 12%, transparent 88%, rgba(0, 0, 0, 0.04));
+      mix-blend-mode: multiply;
+      opacity: 0.38;
+    }
+
+    .fold-panel::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 1px;
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    .memory-cell.open-left .fold-panel::after {
+      left: auto;
+      right: 0;
+    }
+
+    .fold-up {
+      transform: rotateX(-92deg);
+      transform-origin: bottom center;
+    }
+
+    .memory-cell.open .fold-up {
+      transform: rotateX(0deg);
+    }
+
+    .fold-panel img.photo-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      filter: saturate(0.96) contrast(1.02);
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .paper-frame {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 3;
+      width: 310px;
+      height: 310px;
+      object-fit: contain;
+      transform: translate(-50%, calc(-50% - 20px));
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .empty-cell {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    .memory-cell .place-wrap {
+      left: 50%;
+      width: 100%;
+      align-items: center;
+      text-align: center;
+    }
+
+    .memory-cell .place,
+    .memory-cell .tagline {
+      width: 100%;
+      text-align: center;
+    }
+
+    .letter-cell {
+      padding: 0;
+      border: 0.933px solid var(--line);
+      background: transparent;
+      cursor: pointer;
+      overflow: visible;
+      z-index: 5;
+    }
+
+    .letter-closed,
+    .letter-scroll,
+    .letter-paper2,
+    .letter-envelope,
+    .letter-open-overlay {
+      position: absolute;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .letter-closed {
+      inset: 0;
+      z-index: 2;
+      transition: transform 220ms ease;
+      transform-origin: center center;
+    }
+
+    .letter-cell::after,
+    .mobile-letter::after {
+      content: "open it";
+      position: absolute;
+      color: var(--soft-ink);
+      font-size: 48px;
+      line-height: 48px;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .letter-cell::after {
+      left: 50%;
+      bottom: 16px;
+      opacity: 0;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      width: max-content;
+      min-width: 150px;
+      transition: opacity 180ms ease;
+    }
+
+    .letter-cell:hover::after {
+      opacity: 1;
+    }
+
+    .letter-cell.open::after,
+    .mobile-letter.open::after {
+      opacity: 0;
+    }
+
+    .letter-cell:not(.open):hover .letter-closed {
+      transform: scale(1.2);
+    }
+
+    .letter-paper2 {
+      left: 45px;
+      top: -44px;
+      width: 203px;
+      height: 203px;
+      object-fit: cover;
+    }
+
+    .letter-envelope {
+      left: 0;
+      top: 15px;
+      width: 166px;
+      height: 96px;
+      object-fit: contain;
+      transform: rotate(-14.95deg);
+      transform-origin: center center;
+    }
+
+    .letter-open-overlay {
+      left: -11px;
+      top: -50px;
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity 160ms ease 0ms;
+    }
+
+    .letter-cell.open .letter-open-overlay {
+      opacity: 1;
+    }
+
+    .letter-scroll {
+      left: 0;
+      bottom: 100%;
+      width: 100%;
+      height: 0;
+      border: 0.933px solid var(--line);
+      background: #fffdf0;
+      overflow: hidden;
+      box-shadow: 0 -10px 22px rgba(0, 0, 0, 0.06);
+      transition: height 760ms cubic-bezier(.2,.8,.2,1) 180ms;
+    }
+
+    .letter-cell.open .letter-scroll {
+      height: calc(var(--cell-h) * 3);
+    }
+
+    .letter-scroll::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -8px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.08);
+      filter: blur(3px);
+    }
+
+    .letter-text {
+      position: absolute;
+      inset: 24px 22px;
+      margin: 0;
+      color: var(--soft-ink);
+      font-size: 20px;
+      line-height: 1.65;
+      text-align: center;
+      white-space: pre-line;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hint { display: none; }
+
+    .mobile-page {
+      display: none;
+    }
+
+    .mobile-title {
+      position: relative;
+      height: 844px;
+      margin: 0;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .mobile-paint {
+      position: absolute;
+      left: -52px;
+      top: 0;
+      width: 475px;
+      height: 633px;
+      z-index: 0;
+      object-fit: cover;
+      opacity: 0;
+      animation: mobilePaintFade 500ms ease-out forwards;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .mobile-title .title-tape {
+      width: 381.333px;
+      height: 114.4px;
+      opacity: 0;
+      z-index: 1;
+      animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 500ms forwards;
+    }
+
+    .mobile-title .title-tape-top {
+      left: 50%;
+      top: 133px;
+      transform: translateX(calc(-50% - 48px));
+    }
+
+    .mobile-title .title-tape-bottom {
+      left: 50%;
+      top: 212px;
+      transform: translateX(calc(-50% - 7px));
+    }
+
+    .mobile-title-text {
+      position: absolute;
+      left: 50%;
+      top: 147px;
+      width: 332px;
+      z-index: 2;
+      transform: translateX(calc(-50% + 24px));
+      text-transform: capitalize;
+      text-align: left;
+      opacity: 0;
+      animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 500ms forwards;
+    }
+
+    .mobile-title-line {
+      display: block;
+      height: 78px;
+      white-space: nowrap;
+    }
+
+    .mobile-title-happy,
+    .mobile-title-anniversary {
+      display: inline-block;
+      font-size: 83.566px;
+      line-height: 72.67px;
+      clip-path: inset(-24px 100% -28px -20px);
+    }
+
+    .mobile-title-happy {
+      clip-path: inset(-24px -40px -28px -20px);
+      animation: none;
+    }
+
+    .mobile-title-anniversary {
+      display: block;
+      margin-top: 6px;
+      clip-path: inset(-24px -60px -28px -20px);
+      animation: none;
+    }
+
+    .mobile-title-two {
+      color: var(--red);
+      font-size: 176px;
+      line-height: 0;
+      display: inline-block;
+      opacity: 1;
+      transform: rotate(-10.67deg) translate(-10px, 27px);
+      animation: none;
+    }
+
+    .mobile-title-suffix {
+      color: var(--red);
+      font-size: 38px;
+      vertical-align: top;
+      margin-left: -30px;
+      position: relative;
+      top: 10px;
+      opacity: 1;
+      animation: none;
+    }
+
+    .mobile-title-sign {
+      position: absolute;
+      left: 85px;
+      top: 506px;
+      z-index: 2;
+      margin: 0;
+      font-size: 32px;
+      line-height: 13.551px;
+      opacity: 0;
+      animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 1050ms forwards;
+    }
+
+    .mobile-title-sun {
+      position: absolute;
+      left: 230px;
+      top: 503px;
+      width: 20px;
+      height: 20px;
+      z-index: 2;
+      opacity: 0;
+      animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 1050ms forwards, sunSpin 7s linear 1050ms infinite;
+      transform-origin: center center;
+    }
+
+    .mobile-heart-img {
+      position: absolute;
+      left: calc(50% - 33px);
+      top: 238px;
+      width: 18px;
+      height: 18px;
+      z-index: 3;
+      transform: scaleX(-1);
+      opacity: 0;
+      animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 500ms forwards, heartBeatMobile 900ms ease-in-out 1050ms infinite;
+    }
+
+    @keyframes gravityDrop {
+      0% { opacity: 0; translate: 0 -72px; }
+      76% { opacity: 1; translate: 0 6px; }
+      100% { opacity: 1; translate: 0 0; }
+    }
+
+    @keyframes mobilePaintFade { to { opacity: 1; } }
+    @keyframes mobileWriteHappy { to { clip-path: inset(-24px -40px -28px -20px); } }
+    @keyframes mobileWriteAnniversary { to { clip-path: inset(-24px -60px -28px -20px); } }
+    @keyframes mobilePopTwo {
+      from { opacity: 0; transform: rotate(-10.67deg) translate(-10px, 27px) scale(.72); }
+      to { opacity: 1; transform: rotate(-10.67deg) translate(-10px, 27px) scale(1); }
+    }
+
+    .mobile-board {
+      --mobile-gap: 10px;
+      --mobile-cell-size: calc((min(100vw, 430px) - 24px - var(--mobile-gap)) / 2);
+      display: grid;
+      grid-template-columns: repeat(2, var(--mobile-cell-size));
+      grid-auto-rows: var(--mobile-cell-size);
+      gap: var(--mobile-gap);
+      position: relative;
+    }
+
+    .mobile-card {
+      position: relative;
+      width: var(--mobile-cell-size);
+      height: var(--mobile-cell-size);
+      padding: 0;
+      border: 0.933px solid var(--line);
+      background: rgba(255, 251, 231, 0.18);
+      cursor: pointer;
+      text-align: left;
+      overflow: visible;
+      perspective: 1200px;
+      z-index: 1;
+    }
+
+    .mobile-card.open,
+    .mobile-card.closing {
+      z-index: 40;
+    }
+
+    .mobile-card .opened-note {
+      font-size: 14px;
+      line-height: 14px;
+      z-index: 1;
+    }
+
+    .mobile-fold-map {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: var(--mobile-cell-size);
+      height: var(--mobile-cell-size);
+      transform-style: preserve-3d;
+      pointer-events: none;
+    }
+
+    .mobile-card-cover {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: var(--mobile-cell-size);
+      height: var(--mobile-cell-size);
+      z-index: 3;
+      background: transparent;
+      transform-origin: right center;
+      transition: transform 300ms cubic-bezier(.2,.8,.2,1);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .mobile-card.open .mobile-card-cover {
+      transform: rotateY(179deg);
+    }
+
+    .mobile-card.open-left .mobile-card-cover {
+      transform-origin: left center;
+    }
+
+    .mobile-card.open.open-left .mobile-card-cover {
+      transform: rotateY(-179deg);
+    }
+
+    .mobile-card .time {
+      font-size: 20px;
+      line-height: 20px;
+    }
+
+    .mobile-card .place {
+      font-size: 34px;
+      line-height: 34px;
+    }
+
+    .mobile-card .tagline {
+      font-size: 14px;
+      line-height: 14px;
+    }
+
+    .mobile-photo {
+      position: absolute;
+      left: var(--mobile-left);
+      top: var(--mobile-top);
+      width: var(--mobile-cell-size);
+      height: var(--mobile-cell-size);
+      margin: 0;
+      overflow: hidden;
+      background: var(--paper);
+      border: 0.933px solid var(--line);
+      pointer-events: none;
+      opacity: 0;
+      transform: var(--mobile-start-transform);
+      transform-origin: var(--mobile-origin);
+      transition: transform 300ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease;
+      transition-delay: calc(225ms + var(--i) * 225ms);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .mobile-card.open .mobile-photo {
+      opacity: 1;
+      transform: rotateX(0deg) rotateY(0deg);
+    }
+
+    .mobile-card.closing .mobile-photo {
+      transition-delay: calc((var(--count) - 1 - var(--i)) * 225ms);
+    }
+
+    .mobile-card.closing .mobile-card-cover {
+      transition-delay: calc(var(--count) * 225ms);
+    }
+
+    .mobile-photo::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 10px #fff;
+    }
+
+    .mobile-photo img.photo-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .mobile-photo .paper-frame {
+      display: none;
+    }
+
+    .mobile-letter {
+      grid-column: 1 / -1;
+      position: relative;
+      min-height: 210px;
+      border: 0.933px solid var(--line);
+      background: rgba(255, 251, 231, 0.18);
+      overflow: hidden;
+    }
+
+    .mobile-letter::after {
+      left: 50%;
+      top: 28px;
+      transform: translateX(-50%);
+      opacity: 1;
+    }
+
+    .mobile-letter .letter-closed {
+      left: 50%;
+      top: 54px;
+      width: 224px;
+      height: 168px;
+      transform: translateX(-50%);
+    }
+
+    .mobile-letter-copy {
+      display: none;
+      margin: 150px 18px 18px;
+      padding: 28px;
+      background: #fffdf0;
+      border: 0.933px solid var(--line);
+      color: var(--soft-ink);
+      font-size: 20px;
+      line-height: 1.65;
+      white-space: pre-line;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobile-letter.open .letter-open-overlay {
+      opacity: 1;
+    }
+
+    .mobile-letter.open {
+      min-height: 640px;
+      overflow: visible;
+      z-index: 160;
+    }
+
+    .mobile-letter.open .mobile-letter-copy {
+      display: flex;
+      min-height: 420px;
+      margin-bottom: 72px;
+    }
+
+    @media (max-width: 768px) {
+      html,
+      body {
+        min-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .page {
+        display: block;
+        height: auto;
+        min-height: 100svh;
+        min-width: 0;
+        padding: 0;
+        overflow: visible;
+        background: var(--paper) url("assets/stickers/background.png") center top / auto 1000px repeat-y;
+      }
+
+      .stage-shell {
+        display: none;
+      }
+
+      .mobile-page {
+        display: block;
+        width: 100%;
+        max-width: 430px;
+        height: 844px;
+        min-height: 844px;
+        max-height: 844px;
+        margin: 0 auto;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      button {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* name 贴纸 - 根据 Figma 设计稿需旋转180度并垂直翻转 */
+      .mobile-name-sticker-wrap {
+        position: absolute;
+        left: -41px;
+        top: 514px;
+        width: 266px;
+        height: 266px;
+        z-index: 3;
+        pointer-events: none;
+        opacity: 0;
+        animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 1050ms forwards;
+      }
+
+      .mobile-name-sticker {
+        width: 100%;
+        height: 100%;
+        display: block;
+        user-select: none;
+        -webkit-user-drag: none;
+        transform: scaleX(-1);
+        transform-origin: center center;
+      }
+
+      /* 首屏：Gloria & Sun. 与 name 贴纸居中 */
+      .mobile-title-sign {
+        left: calc(-41px + 266px / 2);
+        top: calc(514px + 266px / 2);
+        transform: translate(-50%, -50%);
+        z-index: 4;
+      }
+
+      /* 首屏：太阳 svg 与 name 贴纸居中，位于文字右侧 */
+      .mobile-title-sun {
+        left: calc(-41px + 266px / 2 + 80px);
+        top: calc(514px + 266px / 2);
+        transform: translate(-50%, -50%);
+        z-index: 4;
+      }
+
+      /* view the journey 按钮容器（包含按钮和 arrow）- 居中对齐 */
+      .mobile-view-journey-wrapper {
+        position: absolute;
+        left: 50%;
+        top: 708px;
+        transform: translateX(-50%);
+        z-index: 4;
+        cursor: pointer;
+        opacity: 0;
+        animation: gravityDrop 800ms cubic-bezier(.18,.89,.28,1.12) 1650ms forwards;
+        text-align: center;
+      }
+
+      .mobile-view-journey-wrapper button {
+        font-size: 48px;
+        line-height: 48px;
+        font-family: "ButterShisan", "Kaiti SC", "STKaiti", cursive, sans-serif;
+        color: var(--ink);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        margin: 0;
+        text-transform: lowercase;
+        white-space: nowrap;
+      }
+
+      .mobile-view-journey-wrapper .mobile-arrow {
+        display: block;
+        width: 24px;
+        height: 16px;
+        margin: 8px auto 0;
+        animation: arrowBounce 1.5s ease-in-out infinite;
+      }
+
+      @keyframes arrowBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(10px); }
+      }
+
+      .mobile-view-journey-wrapper:active {
+        opacity: 0.7 !important;
+      }
+
+      /* journey-active 状态：点击 view the journey 后 */
+      .mobile-page.journey-active {
+        height: 100svh;
+        min-height: 100svh;
+        max-height: none;
+        padding-top: 0;
+        overflow: hidden;
+      }
+
+      .mobile-page.journey-active .mobile-title {
+        position: fixed;
+        top: -124px; /* 标题上移 124px */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 430px;
+        height: 733px; /* 完整显示 633px 高的 paint + 100px 偏移 */
+        overflow: hidden;
+        z-index: 100;
+        margin: 0 auto;
+        pointer-events: none;
+        cursor: default;
+      }
+
+      /* 点击后 name 贴纸、Gloria & Sun.、太阳全部消失 */
+      .mobile-page.journey-active .mobile-name-sticker-wrap,
+      .mobile-page.journey-active .mobile-title-sign,
+      .mobile-page.journey-active .mobile-title-sun {
+        display: none !important;
+      }
+
+      .mobile-page.journey-active .mobile-paint {
+        opacity: 0.1 !important;
+        animation: none;
+      }
+
+      .mobile-page.journey-active .mobile-view-journey-wrapper {
+        display: none !important;
+      }
+
+      /* 点击后：格子从标题可见区域（150px）底部 + 48px 处开始独立滚动 */
+      .mobile-page.journey-active .mobile-board {
+        position: fixed;
+        top: calc(150px + 48px); /* 标题可见区域 150px + 48px 间距 */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 430px;
+        bottom: 0;
+        z-index: 120;
+        pointer-events: auto;
+        overflow-y: auto;
+        overflow-x: visible;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        justify-content: center;
+      }
+
+      /* 格子顶部遮罩：透明区域用于点击收起标题 */
+      .mobile-page.journey-active .mobile-board::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 633px; /* 标题可见区域高度 */
+        background: transparent;
+        pointer-events: none;
+        z-index: 100;
+        display: none;
+      }
+
+      /* 格子的实际内容区域 */
+      .mobile-page.journey-active .mobile-board .board-content {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(2, var(--mobile-cell-size));
+        grid-auto-rows: var(--mobile-cell-size);
+        gap: var(--mobile-gap);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0 12px 28px;
+        pointer-events: auto; /* 内容区域可以点击 */
+      }
+
+      /* 内容区域滑入动画 */
+      .mobile-board {
+        display: none;
+      }
+
+      /* 使用更高优先级的选择器，确保 journey-active 状态下 visible 正确显示 */
+      .mobile-page.journey-active .mobile-board.visible {
+        display: grid;
+        animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
+      .mobile-paint {
+        left: 50%;
+        top: 0;
+        width: min(100%, 390px);
+        height: auto;
+        aspect-ratio: 390 / 633;
+        object-fit: contain;
+        transform: translateX(-50%);
+      }
+
+      .mobile-board {
+        justify-content: center;
+      }
+
+      .mobile-page.journey-active .mobile-card,
+      .mobile-page.journey-active .mobile-letter {
+        pointer-events: auto;
+      }
+
+      .mobile-card .place-wrap {
+        left: 50%;
+        width: 100%;
+        align-items: center;
+        text-align: center;
+      }
+
+      .mobile-card .place,
+      .mobile-card .tagline {
+        width: 100%;
+        text-align: center;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="stage-shell">
+    <div class="stage-canvas">
+    <div class="stage">
+      <section class="memory-grid" id="memoryGrid" aria-label="十二个目的地的周年纪念格子"></section>
+      <div class="desktop-paint" aria-hidden="true"><img src="assets/stickers/paint.png" alt=""></div>
+      <section class="title-lockup" aria-label="Happy 2nd Anniversary Gloria & Sun.">
+      <img class="title-tape title-tape-top" src="assets/stickers/longtape.png" alt="" aria-hidden="true">
+      <img class="title-tape title-tape-bottom" src="assets/stickers/longtape.png" alt="" aria-hidden="true">
+      <p class="title-happy">Happy</p>
+      <p class="title-ordinal">2</p>
+      <p class="title-suffix">nd</p>
+      <p class="title-anniversary">Anniversary</p>
+      <p class="title-sign">Gloria & Sun.</p>
+        <img class="title-sun" src="assets/stickers/sun.svg" alt="" aria-hidden="true">
+        <img class="heart-img" src="assets/stickers/heart.png" alt="" aria-hidden="true">
+        </section>
+      </div>
+    </div>
+    </div>
+    <section class="mobile-page" aria-label="手机端周年手帐">
+      <div class="mobile-title" aria-label="Happy 2nd Anniversary Gloria & Sun.">
+        <img class="mobile-paint" src="assets/stickers/paint.png" alt="" aria-hidden="true">
+        <img class="title-tape title-tape-top" src="assets/stickers/longtape.png" alt="" aria-hidden="true">
+        <img class="title-tape title-tape-bottom" src="assets/stickers/longtape.png" alt="" aria-hidden="true">
+        <div class="mobile-title-text"><span class="mobile-title-line"><span class="mobile-title-happy">Happy</span><span class="mobile-title-two">2</span><span class="mobile-title-suffix">nd</span></span><span class="mobile-title-anniversary">Anniversary</span></div>
+        <img class="mobile-heart-img" src="assets/stickers/heart.png" alt="" aria-hidden="true">
+        <p class="mobile-title-sign">Gloria & Sun.</p>
+        <img class="mobile-title-sun" src="assets/stickers/sun.svg" alt="" aria-hidden="true">
+        <!-- name 贴纸 - 对应 Figma 设计稿 node-id:66:127 -->
+        <span class="mobile-name-sticker-wrap" aria-hidden="true"><img class="mobile-name-sticker" src="assets/stickers/name.png" alt="" onerror="this.parentElement.style.display='none'"></span>
+        <!-- view the journey 按钮容器（包含按钮和 arrow） -->
+        <div class="mobile-view-journey-wrapper" aria-label="View the journey">
+          <button class="mobile-view-journey">view the journey</button>
+          <img class="mobile-arrow" src="assets/icons/arrow.svg" alt="" aria-hidden="true" onerror="this.style.display='none'">
+        </div>
+      </div>
+      <div class="mobile-board" id="mobileBoard"></div>
+    </section>
+  </main>
+  <p class="hint">点击任意地点格子打开封面，再点一次可以合上。</p>
+
+  <script>
+    const trips = [
+      {
+            "folder": "2025June-nanjing",
+            "place": "南京",
+            "time": "2025-June",
+            "note": "寻找一把青",
+            "photos": [
+                  "IMG_8274.JPG",
+                  "cpm35 2025-06-07 下午15124.091.JPG",
+                  "cpm35 2025-06-07 下午20559.735.JPG"
+            ]
+      },
+      {
+            "folder": "2025July-beijing",
+            "place": "北京",
+            "time": "2025-July",
+            "note": "亮马河里划小船",
+            "photos": [
+                  "IMG_9762.JPG"
+            ]
+      },
+      {
+            "folder": "2025July-yangzhou",
+            "place": "扬州",
+            "time": "2025-July",
+            "note": "带着孙老师游扬州",
+            "photos": [
+                  "IMG_0066.jpg"
+            ]
+      },
+      {
+            "folder": "2025August-hangzhou",
+            "place": "杭州",
+            "time": "2025-August",
+            "note": "来杭州过周末",
+            "photos": [
+                  "IMG_0639.JPG",
+                  "IMG_0632.JPG",
+                  "IMG_0608.JPG",
+                  "IMG_0595.JPG"
+            ]
+      },
+      {
+            "folder": "2025August-shanghai",
+            "place": "上海",
+            "time": "2025-August",
+            "note": "在上海尝尝咖啡omakase",
+            "photos": [
+                  "IMG_0453.JPG",
+                  "IMG_0422.JPG",
+                  "IMG_9968.JPG"
+            ]
+      },
+      {
+            "folder": "2025October-beijing",
+            "place": "北京",
+            "time": "2025-October",
+            "note": "秋天的白塔",
+            "photos": [
+                  "IMG_1536.JPG",
+                  "IMG_0894.JPG",
+                  "dfuns 2025-10-26 下午23218.702.JPG",
+                  "fxn 2025-10-10 下午92852.098.JPG",
+                  "IMG_0793.JPG"
+            ]
+      },
+      {
+            "folder": "2025October-tianjing",
+            "place": "天津",
+            "time": "2025-October",
+            "note": "还没吃到糖果子！",
+            "photos": [
+                  "IMG_1036.JPG",
+                  "fxn 2025-10-11 下午21945.816.JPG"
+            ]
+      },
+      {
+            "folder": "2025November-wuxi",
+            "place": "无锡",
+            "time": "2025-November",
+            "note": "无锡玉兰饼好吃啊！",
+            "photos": [
+                  "IMG_2799.JPG",
+                  "dfuns 2025-11-17 上午121310.718.JPG"
+            ]
+      },
+      {
+            "folder": "2025December-beijing",
+            "place": "北京",
+            "time": "2025-December",
+            "note": "在北京喝点小酒",
+            "photos": [
+                  "IMG_5133.JPG",
+                  "IMG_1570.JPG"
+            ]
+      },
+      {
+            "folder": "2025December-nanjing",
+            "place": "南京",
+            "time": "2025-December",
+            "note": "玄武湖边发发呆",
+            "photos": [
+                  "ofm 2025-12-06 下午30332.318.JPG",
+                  "IMG_3742.JPG",
+                  "IMG_3753.JPG",
+                  "IMG_3750.JPG",
+                  "IMG_3749.JPG",
+                  "IMG_3953.JPG",
+                  "ofm 2025-12-06 下午50019.075.JPG"
+            ]
+      },
+      {
+            "folder": "2025December-qinhuangdao",
+            "place": "秦皇岛",
+            "time": "2025-December",
+            "note": "新年快乐，零下十度的海",
+            "photos": [
+                  "IMG_5648.JPG",
+                  "IMG_5639.JPG",
+                  "IMG_5404.JPG"
+            ]
+      },
+      {
+            "folder": "2026March-beijing",
+            "place": "北京",
+            "time": "2026-March",
+            "note": "春来乍到！",
+            "photos": [
+                  "IMG_9295.JPG"
+            ]
+      }
+];
+    // 打开每个目的地后留在原格子里的短文案。
+    // 你后续只需要修改这里的文字，不超过 15 个字会比较稳。
+    const openCaptions = [
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话",
+      "这里写一句话"
+    ];
+
+    const contentSlots = [[1,2],[1,3],[1,4],[2,5],[2,6],[3,2],[4,1],[4,2],[4,3],[4,4],[5,4],[5,5]];
+    const emptyCells = [
+      [1, 1], [1, 5], [1, 6],
+      [2, 1], [2, 2], [3, 1], [3, 5], [3, 6],
+      [4, 5], [4, 6],
+      [5, 1], [5, 2], [5, 3]
+    ];
+    const titleFills = [[2, 3, 2], [3, 3, 2]];
+    const letterCopy = 'Hi，孙老师，两周年快乐！\n福州还像是昨天，但我们又走过了一个春夏秋冬，天南海北，未来还要一起去探索更多地方，在地球的每个角落都留下我们的脚印，小小的我们在大大世界，但大大的世界也在我们心里。\n一起并肩向前走，奔向我们的新一年，奔向我们的一年又一年～';
+    const grid = document.getElementById('memoryGrid');
+
+    function photoPath(trip, file) {
+      return encodeURI('assets/photos/' + trip.folder + '/' + file);
+    }
+
+    function renderTitleFill(row, col, span) {
+      const cell = document.createElement('div');
+      cell.className = 'cell title-fill';
+      cell.style.gridRow = row;
+      cell.style.gridColumn = col + ' / span ' + span;
+      grid.appendChild(cell);
+    }
+
+    function renderTrip(trip, index) {
+      const slot = contentSlots[index];
+      const pagePhotos = trip.photos.slice(0, 5);
+      const rowCount = Math.min(pagePhotos.length, 3);
+      const stackCount = Math.max(1, pagePhotos.length - 2);
+      const opensUp = slot[0] >= 5;
+      const opensLeft = slot[1] + rowCount - 1 > 6;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cell memory-cell' + (opensLeft ? ' open-left' : '') + (opensUp ? ' open-up' : '');
+      button.style.gridRow = slot[0];
+      button.style.gridColumn = slot[1];
+      button.style.setProperty('--count', pagePhotos.length);
+      button.style.setProperty('--row-count', rowCount);
+      button.style.setProperty('--stack-count', stackCount);
+      button.setAttribute('aria-label', trip.place + ' ' + trip.time + '，点击打开照片');
+
+      const panels = pagePhotos.map((file, photoIndex) => {
+        const isFirst = photoIndex === 0;
+        const isStackedUp = photoIndex >= 3;
+        const foldClass = isFirst ? 'fold-panel fold-first' : (isStackedUp ? 'fold-panel fold-up' : 'fold-panel fold-side');
+        const x = Math.min(photoIndex, 2);
+        const y = photoIndex >= 3 ? -(photoIndex - 2) : 0;
+        const sideOffset = 'calc(' + x + ' * var(--cell-w))';
+        const horizontal = opensLeft ? 'right:' + sideOffset + '; --panel-left:auto; --panel-right:' + sideOffset + ';' : 'left:' + sideOffset + '; --panel-left:' + sideOffset + '; --panel-right:auto;';
+        const vertical = '--panel-top:calc(' + y + ' * var(--cell-h));';
+        return '<figure class="' + foldClass + '" style="--i:' + photoIndex + '; ' + horizontal + vertical + '">' +
+          '<img class="photo-img" src="' + photoPath(trip, file) + '" alt="' + trip.place + ' ' + trip.time + ' 照片 ' + (photoIndex + 1) + '" loading="lazy"><img class="paper-frame" src="assets/stickers/paper.png" alt="" aria-hidden="true">' +
+        '</figure>';
+      }).join('');
+
+      button.innerHTML =
+        '<div class="opened-note">' + openCaptions[index] + '</div>' +
+        '<div class="unfold-strip" aria-hidden="true">' + panels + '</div>' +
+        '<div class="cover">' +
+          '<span class="time">' + trip.time + '</span>' +
+          '<span class="place-wrap">' +
+            '<span class="place">' + trip.place + '</span>' +
+            '<span class="tagline">“' + trip.note + '”</span>' + 
+          '</span>' +
+        '</div>';
+
+      button.addEventListener('click', () => {
+        const wasOpen = button.classList.contains('open');
+        document.querySelectorAll('.memory-cell.open').forEach((cell) => {
+          if (cell !== button) closeFoldCell(cell, 'memory-cell');
+        });
+        if (wasOpen) {
+          closeFoldCell(button, 'memory-cell');
+        } else {
+          button.classList.remove('closing');
+          button.classList.add('open');
+        }
+      });
+
+      grid.appendChild(button);
+    }
+
+    function renderEmpty(row, col) {
+      const cell = document.createElement('div');
+      cell.className = 'cell empty-cell';
+      cell.style.gridRow = row;
+      cell.style.gridColumn = col;
+      grid.appendChild(cell);
+    }
+
+
+
+    function mobileFoldStep(photoIndex, opensLeft) {
+      const rightFirst = [
+        { x: 1, y: 0, origin: "left center", transform: "rotateY(92deg)" },
+        { x: 1, y: 1, origin: "top center", transform: "rotateX(92deg)" },
+        { x: 0, y: 1, origin: "right center", transform: "rotateY(-92deg)" },
+        { x: 0, y: 2, origin: "top center", transform: "rotateX(92deg)" },
+        { x: 1, y: 2, origin: "left center", transform: "rotateY(92deg)" }
+      ];
+      const leftFirst = [
+        { x: -1, y: 0, origin: "right center", transform: "rotateY(-92deg)" },
+        { x: -1, y: 1, origin: "top center", transform: "rotateX(92deg)" },
+        { x: 0, y: 1, origin: "left center", transform: "rotateY(92deg)" },
+        { x: 0, y: 2, origin: "top center", transform: "rotateX(92deg)" },
+        { x: -1, y: 2, origin: "right center", transform: "rotateY(-92deg)" }
+      ];
+      const steps = opensLeft ? leftFirst : rightFirst;
+      return steps[photoIndex] || steps[steps.length - 1];
+    }
+
+    function closeFoldCell(cell, baseClass) {
+      if (!cell || cell.classList.contains('closing')) return;
+      const count = Number(cell.style.getPropertyValue('--count')) || 1;
+      const closeMs = 300 + count * 225 + 80;
+      cell.classList.add('closing');
+      cell.classList.remove('open');
+      window.setTimeout(() => {
+        cell.classList.remove('closing');
+      }, closeMs);
+    }
+
+    function renderMobileTrip(trip, index) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "mobile-card" + (index % 2 === 1 ? " open-left" : "");
+      card.setAttribute("aria-label", trip.place + " " + trip.time + "，点击打开照片");
+      const pagePhotos = trip.photos.slice(0, 5);
+      card.style.setProperty("--count", pagePhotos.length);
+      const opensLeft = index % 2 === 1;
+      const photos = pagePhotos.map((file, photoIndex) => {
+        const step = mobileFoldStep(photoIndex, opensLeft);
+        const left = 'calc((' + step.x + ') * (var(--mobile-cell-size) + var(--mobile-gap)))';
+        const top = 'calc((' + step.y + ') * (var(--mobile-cell-size) + var(--mobile-gap)))';
+        return '<figure class="mobile-photo" style="--i:' + photoIndex + '; --mobile-left:' + left + '; --mobile-top:' + top + '; --mobile-origin:' + step.origin + '; --mobile-start-transform:' + step.transform + ';"><img class="photo-img" src="' + photoPath(trip, file) + '" alt="' + trip.place + ' ' + trip.time + ' 照片 ' + (photoIndex + 1) + '" loading="lazy"><img class="paper-frame" src="assets/stickers/paper.png" alt="" aria-hidden="true"></figure>';
+      }).join("");
+      card.innerHTML =
+        '<div class="opened-note">' + openCaptions[index] + '</div>' +
+        '<div class="mobile-fold-map">' +
+          '<div class="mobile-card-cover">' +
+            '<span class="time">' + trip.time + '</span>' +
+            '<span class="place-wrap">' +
+              '<span class="place">' + trip.place + '</span>' +
+              '<span class="tagline">“' + trip.note + '”</span>' +
+            '</span>' +
+          '</div>' +
+          photos +
+        '</div>';
+      card.addEventListener("click", () => {
+        const wasOpen = card.classList.contains("open");
+        document.querySelectorAll(".mobile-card.open").forEach((item) => {
+          if (item !== card) closeFoldCell(item, "mobile-card");
+        });
+        if (wasOpen) {
+          closeFoldCell(card, "mobile-card");
+        } else {
+          card.classList.remove("closing");
+          card.classList.add("open");
+        }
+      });
+      return card;
+    }
+
+    function renderMobileLetter() {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mobile-letter";
+      button.setAttribute("aria-label", "打开一封信");
+      button.innerHTML = '<div class="letter-closed"><img class="letter-paper2" src="assets/stickers/paper2.png" alt="" aria-hidden="true"><img class="letter-envelope" src="assets/stickers/letter.png" alt="" aria-hidden="true"><img class="letter-open-overlay" src="assets/stickers/letteropen.png" alt="" aria-hidden="true"></div><p class="mobile-letter-copy">' + letterCopy + '</p>';
+      button.addEventListener("click", () => {
+        const willOpen = !button.classList.contains("open");
+        button.classList.toggle("open", willOpen);
+        if (willOpen) {
+          window.setTimeout(() => {
+            const mobileBoard = document.getElementById("mobileBoard");
+            if (mobileBoard) {
+              mobileBoard.scrollTo({ top: mobileBoard.scrollHeight, behavior: "smooth" });
+            }
+            button.scrollIntoView({ block: "end", behavior: "smooth" });
+          }, 80);
+        }
+      });
+      return button;
+    }
+
+    function renderMobileBoard() {
+      const mobileBoard = document.getElementById("mobileBoard");
+      if (!mobileBoard) return;
+      trips.forEach((trip, index) => mobileBoard.appendChild(renderMobileTrip(trip, index)));
+      mobileBoard.appendChild(renderMobileLetter());
+    }
+
+    function renderLetterCell() {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cell letter-cell';
+      button.style.gridRow = 5;
+      button.style.gridColumn = 6;
+      button.setAttribute('aria-label', '打开一封信');
+      button.innerHTML = '<div class="letter-scroll"><p class="letter-text">' + letterCopy + '</p></div><div class="letter-closed"><img class="letter-paper2" src="assets/stickers/paper2.png" alt="" aria-hidden="true"><img class="letter-envelope" src="assets/stickers/letter.png" alt="" aria-hidden="true"><img class="letter-open-overlay" src="assets/stickers/letteropen.png" alt="" aria-hidden="true"></div>';
+      button.addEventListener('click', () => {
+        button.classList.toggle('open');
+      });
+      grid.appendChild(button);
+    }
+
+    titleFills.forEach(([row, col, span]) => renderTitleFill(row, col, span));
+    trips.forEach(renderTrip);
+    emptyCells.forEach(([row, col]) => renderEmpty(row, col));
+    renderLetterCell();
+    function initMobileJourney() {
+      const wrapper = document.querySelector('.mobile-view-journey-wrapper');
+      const mobilePage = document.querySelector('.mobile-page');
+      const board = document.getElementById('mobileBoard');
+      const mobileTitle = document.querySelector('.mobile-title');
+
+      if (!wrapper || !mobilePage || !board) return;
+
+      // 点击 view the journey 或 arrow：标题上移，格子从标题下方 48px 处独立滚动
+      wrapper.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止冒泡，避免触发 mobile-title 的点击收起逻辑
+        mobilePage.classList.add('journey-active');
+        board.classList.add('visible');
+        // 平滑滚动到标题上移后的可视区域
+        board.scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      const returnToCover = () => {
+        mobilePage.classList.remove('journey-active');
+        board.classList.remove('visible');
+        board.scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      let pullStartY = 0;
+      let isPullingFromTop = false;
+
+      board.addEventListener('touchstart', (event) => {
+        if (!mobilePage.classList.contains('journey-active')) return;
+        pullStartY = event.touches[0].clientY;
+        isPullingFromTop = board.scrollTop <= 0;
+      }, { passive: true });
+
+      board.addEventListener('touchmove', (event) => {
+        if (!mobilePage.classList.contains('journey-active') || !isPullingFromTop) return;
+        const pullDistance = event.touches[0].clientY - pullStartY;
+        if (pullDistance > 86) {
+          isPullingFromTop = false;
+          returnToCover();
+        }
+      }, { passive: true });
+    }
+
+    renderMobileBoard();
+    initMobileJourney();
+  </script>
+</body>
+</html>
